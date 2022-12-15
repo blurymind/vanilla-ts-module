@@ -1,1 +1,1 @@
-"use strict";Object.defineProperty(exports,Symbol.toStringTag,{value:"Module"});const t=e=>{const o=document.getElementById("app");return o&&(o.innerHTML="aerr TEST "+e),`Hello Todor, ${e}!`};exports.hello=t;
+"use strict";Object.defineProperty(exports,Symbol.toStringTag,{value:"Module"});const l=o=>{const e=document.getElementById("app");return console.log("found element",e),e&&(e.innerHTML="aerr TEST "+o),`Hello Todor, ${o}!`};exports.hello=l;

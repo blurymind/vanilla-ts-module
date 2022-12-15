@@ -7,7 +7,10 @@
   "src/demo.ts": {
     "file": "main2.cjs",
     "src": "src/demo.ts",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "src/main.ts"
+    ]
   },
   "src/style.css": {
     "file": "main3.cjs",
