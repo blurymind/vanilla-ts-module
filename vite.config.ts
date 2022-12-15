@@ -28,6 +28,14 @@ export default defineConfig({
             formats: ["es", "cjs"],
         },
         rollupOptions: {
+            input: [
+                path.resolve(__dirname, "src/main.ts"),
+                path.resolve(__dirname, "src/demo.ts"),
+                path.resolve(__dirname, "src/style.css")
+            ],
+            output: {
+              preserveModules: false
+            },
             external: [],
             plugins: [
                 typescriptPaths({
