@@ -7,7 +7,6 @@ import "nouislider/dist/nouislider.min.css" //it can handle ext dependencies too
 
 // main.ts
 const hello = (name: string) => {
-
     return `Hello ${name}!`;
 };
 
@@ -97,52 +96,11 @@ const init = (element: HTMLElement|null) => {
         video.play()
     })
 
-    video.addEventListener('loadeddata', e=>{
-        console.log("LOADED VIDEO", e, rangeSlider)
-        rangeSlider.updateOptions({
-            range: {
-                'min': 0,
-                'max': video.duration
-            }
-        }, true);
-        rangeSlider.setHandle(2, video.duration)
-    })
-    input.addEventListener('change', e => {
-        console.log("Load video", e, source, source.parentNode)
-        //@ts-ignore
-        const videoFile = e.target.files[0];
-        console.log({videoFile})
-        source.src = URL.createObjectURL(videoFile);
-        video.load();
-        video.play();
-        widthField.value = video.videoWidth.toString();
-    })
-
-    const playButton = document.createElement("button");
-    playButton.innerText = "play/pause"
-    playButton.addEventListener('click', togglePlay);
-    video.addEventListener('click', togglePlay);
-
-    video.appendChild(source)
-    element.appendChild(video);
-    element.appendChild(input);
-    element.appendChild(playButton);
-    const countField = document.createElement('input');
-    countField.type = 'number'
-    countField.min = '1'
-    countField.max = '80'
-    countField.style.width = '150px'
-    countField.placeholder = 'extract 10 frames'
-    countField.value = '10';
-    element.appendChild(countField);
-
-    const extractButton = document.createElement('button');
-    extractButton.innerText = 'Extract frames';
     const output = document.createElement('div');//todo change to canvas (player with fps previewing) - in another class
     const canvasOutput = document.createElement('canvas');//todo change to canvas (player with fps previewing) - in another class
     output.style.overflow = 'auto';
-    output.style.maxHeight = 'calc(50vh - 100px)'
-    extractButton.addEventListener('click', ()=>{
+    output.style.maxHeight = 'calc(50vh - 100px)';
+    const extractFrames = () =>{
         //@ts-ignore
         const startTime = parseFloat(rangeSlider.get()[0])
         //@ts-ignore
@@ -184,6 +142,60 @@ const init = (element: HTMLElement|null) => {
                 }
             })
         })
+    }
+    video.addEventListener('loadeddata', e=>{
+        console.log("LOADED VIDEO", e, rangeSlider)
+        rangeSlider.updateOptions({
+            range: {
+                'min': 0,
+                'max': video.duration
+            }
+        }, true);
+        rangeSlider.setHandle(2, video.duration);
+        // extractFrames();
+    })
+    input.addEventListener('change', e => {
+        console.log("Load video", e, source, source.parentNode)
+        //@ts-ignore
+        const videoFile = e.target.files[0];
+        console.log({videoFile})
+        source.src = URL.createObjectURL(videoFile);
+        video.load();
+        video.play();
+        widthField.value = video.videoWidth.toString();
+    })
+
+    const playButton = document.createElement("button");
+    playButton.innerText = "play/pause"
+    playButton.addEventListener('click', togglePlay);
+    video.addEventListener('click', togglePlay);
+
+    video.appendChild(source)
+    element.appendChild(video);
+    element.appendChild(input);
+    element.appendChild(playButton);
+    const countField = document.createElement('input');
+    countField.type = 'number'
+    countField.min = '1'
+    countField.max = '80'
+    countField.style.width = '150px'
+    countField.placeholder = 'extract 10 frames'
+    countField.value = '10';
+    element.appendChild(countField);
+
+    const extractButton = document.createElement('button');
+    extractButton.innerText = 'Extract frames';
+
+    extractButton.addEventListener('click', extractFrames);
+    canvasOutput.addEventListener('click', ()=>{ //download images
+        console.log(canvasOutput.toDataURL());
+        const link = document.createElement('a');
+        //@ts-ignore
+        link.download = `${input.files[0].name}-download.png`;//todo change to video name
+        link.href = canvasOutput.toDataURL();
+        link.click();
+        //@ts-ignore
+        link.delete;
     })
     element.appendChild(extractButton);
     // element.appendChild(output);
