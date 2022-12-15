@@ -1,6 +1,6 @@
 //@ts-ignore
 import videoFrames from 'video-frames';
-import noUiSlider from "nouislider"
+import noUiSlider from "nouislider"//todo change for https://www.cssscript.com/custom-range-slider-input/ ??
 
 import "nouislider/dist/nouislider.min.css" //it can handle ext dependencies too
 
