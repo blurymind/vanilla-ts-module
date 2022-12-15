@@ -24,14 +24,7 @@ const init = (element: HTMLElement|null) => {
         }
     });
     element.appendChild(slider)
-    var styles = `
-     .noUi-handle {
-        opacity: 0.7;
-     }
-    `
-    var styleSheet = document.createElement("style")
-    styleSheet.innerText = styles
-    document.head.appendChild(styleSheet);
+
     const video = document.createElement('video')
     video.style.maxHeight = "50vh";
 
@@ -146,6 +139,7 @@ const init = (element: HTMLElement|null) => {
     const extractButton = document.createElement('button');
     extractButton.innerText = 'Extract frames';
     const output = document.createElement('div');//todo change to canvas (player with fps previewing) - in another class
+    const canvasOutput = document.createElement('canvas');//todo change to canvas (player with fps previewing) - in another class
     output.style.overflow = 'auto';
     output.style.maxHeight = 'calc(50vh - 100px)'
     extractButton.addEventListener('click', ()=>{
@@ -153,10 +147,18 @@ const init = (element: HTMLElement|null) => {
         const startTime = parseFloat(rangeSlider.get()[0])
         //@ts-ignore
         const endTime = parseFloat(rangeSlider.get()[2])
+
+        const frameWidth = parseInt(widthField.value) || video.videoWidth;
+        const count = parseInt(countField.value)
+        canvasOutput.width = frameWidth * count;
+        canvasOutput.height =  video.videoHeight;
+        const ctx = canvasOutput.getContext('2d');
+        console.log({canvasW: frameWidth * count, canvH: video.videoHeight})
+
         videoFrames({
             url: source.src,
-            count: parseInt(countField.value),
-            width: parseInt(widthField.value) || video.videoWidth, //height is auto
+            count,
+            width: frameWidth, //height is auto
             startTime,
             endTime,
             type: 'image/webp',
@@ -171,13 +173,29 @@ const init = (element: HTMLElement|null) => {
         }).then((frames) => {
             output.innerHTML = ''
             //@ts-ignore
-            frames.forEach(f => {
-                output.innerHTML += `<img src="${f.image}">`
+            frames.forEach((f,i) => {
+                // output.innerHTML += `<img src="${f.image}">`
+                if(ctx){
+                    const img = new Image();   // Create new img element
+                    img.addEventListener("load", function() {
+                        ctx.drawImage(img,i * img.width,0);
+                    }, false);
+                    img.src = f.image;
+                }
             })
         })
     })
     element.appendChild(extractButton);
-    element.appendChild(output);
+    // element.appendChild(output);
+    element.appendChild(canvasOutput);
 
+    var styles = `
+     .noUi-handle {
+        opacity: 0.7;
+     }
+    `
+    var styleSheet = document.createElement("style")
+    styleSheet.innerText = styles
+    document.head.appendChild(styleSheet);
 }
 export { hello, init };
