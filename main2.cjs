@@ -1,1 +1,1 @@
-"use strict";const e=require("./main.cjs"),s=e.hello("test");console.log("ERR",s);
+"use strict";const e=require("./main.cjs"),t=e.hello("test");e.init(document.getElementById("app"));console.log("ERR",t);
