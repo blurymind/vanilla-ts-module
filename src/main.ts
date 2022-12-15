@@ -100,6 +100,16 @@ const init = (element: HTMLElement|null) => {
     const canvasOutput = document.createElement('canvas');//todo change to canvas (player with fps previewing) - in another class
     output.style.overflow = 'auto';
     output.style.maxHeight = 'calc(50vh - 100px)';
+    const downloadExtractedFrames = () => {
+        console.log(canvasOutput.toDataURL());
+        const link = document.createElement('a');
+        //@ts-ignore
+        link.download = `${input.files[0].name}-download.png`;//todo change to video name
+        link.href = canvasOutput.toDataURL();
+        link.click();
+        //@ts-ignore
+        link.delete;
+    }
     const extractFrames = () =>{
         //@ts-ignore
         const startTime = parseFloat(rangeSlider.get()[0])
@@ -137,12 +147,19 @@ const init = (element: HTMLElement|null) => {
                     const img = new Image();   // Create new img element
                     img.addEventListener("load", function() {
                         ctx.drawImage(img,i * img.width,0);
+
+                        if(i === frames.length - 1){
+                            setTimeout(()=>{
+                                downloadExtractedFrames()
+                            }, 200)
+                        }
                     }, false);
                     img.src = f.image;
                 }
             })
         })
     }
+
     video.addEventListener('loadeddata', e=>{
         console.log("LOADED VIDEO", e, rangeSlider)
         rangeSlider.updateOptions({
@@ -187,16 +204,7 @@ const init = (element: HTMLElement|null) => {
     extractButton.innerText = 'Extract frames';
 
     extractButton.addEventListener('click', extractFrames);
-    canvasOutput.addEventListener('click', ()=>{ //download images
-        console.log(canvasOutput.toDataURL());
-        const link = document.createElement('a');
-        //@ts-ignore
-        link.download = `${input.files[0].name}-download.png`;//todo change to video name
-        link.href = canvasOutput.toDataURL();
-        link.click();
-        //@ts-ignore
-        link.delete;
-    })
+    canvasOutput.addEventListener('click', downloadExtractedFrames)
     element.appendChild(extractButton);
     // element.appendChild(output);
     element.appendChild(canvasOutput);
