@@ -9,10 +9,12 @@ specifiers:
   rollup-plugin-typescript-paths: ^1.3.0
   tslib: ^2.4.0
   typescript: ^4.9.3
+  video-frames: ^1.0.18
   vite: ^4.0.0
 
 dependencies:
   nouislider: 15.6.1
+  video-frames: 1.0.18
 
 devDependencies:
   '@rollup/plugin-typescript': 8.5.0_mhocex6fqwakw35tk2klboonyu
@@ -664,6 +666,10 @@ packages:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
     engines: {node: '>= 4.0.0'}
     dev: true
+
+  /video-frames/1.0.18:
+    resolution: {integrity: sha512-2wAQNLc6XGA3+4hLSp3jv69M6H5270JDwFfAv56L5mC+GEEdHiLsAXj3c/XelDcYm1+0NaAw276XoAFdCqaMHw==}
+    dev: false
 
   /vite/4.0.1_@types+node@17.0.45:
     resolution: {integrity: sha512-kZQPzbDau35iWOhy3CpkrRC7It+HIHtulAzBhMqzGHKRf/4+vmh8rPDDdv98SWQrFWo6//3ozwsRmwQIPZsK9g==}

@@ -1,15 +1,14 @@
+//@ts-ignore
+import videoFrames from 'video-frames';
 import noUiSlider from "nouislider"
+
 import "nouislider/dist/nouislider.min.css" //it can handle ext dependencies too
+
 
 // main.ts
 const hello = (name: string) => {
-    // const app =document.getElementById("app");
-    // console.log("found element", app)
-    // if(app){
-    //     app.innerHTML = ">> " + name
-    // }
 
-    return `Hello Todor, ${name}!`;
+    return `Hello ${name}!`;
 };
 
 // todo move under a class so we can instantiate it
@@ -33,10 +32,26 @@ const init = (element: HTMLElement|null) => {
     var styleSheet = document.createElement("style")
     styleSheet.innerText = styles
     document.head.appendChild(styleSheet);
-
     const video = document.createElement('video')
-    const source = document.createElement('source')
+    video.style.maxHeight = "50vh";
 
+    const widthField = document.createElement('input');
+    widthField.type = 'number'
+    widthField.title = 'Video width (height is automatic)'
+    widthField.min = '8'
+    widthField.max = '1080'
+    widthField.style.width = '150px'
+    widthField.placeholder = '0'
+    widthField.value = '0';
+    widthField.addEventListener('change', ()=>{
+        const vidWidth = parseInt(widthField.value);
+        console.log(vidWidth)
+        //@ts-ignore
+        video.style.width = vidWidth === 0 ? undefined : `${vidWidth}px`;
+    })
+    element.appendChild(widthField)
+
+    const source = document.createElement('source')
     const input = document.createElement('input');
     input.type = "file"
     input.accept = "video/*"
@@ -49,14 +64,14 @@ const init = (element: HTMLElement|null) => {
         }
     }
 
-    video.addEventListener('timeupdate', e =>{
-    })
+    // video.addEventListener('timeupdate', e =>{
+    // })
     //// VIDEO update (faster than the timeupdate event
     var lastTime = -1;
     function draw() {
         var time = video.currentTime;
         if (time !== lastTime) {
-            console.log('time: ' + time);
+            // console.log('time: ' + time);
             //todo: do your rendering here
             lastTime = time;
             rangeSlider.setHandle(1, time)
@@ -107,6 +122,7 @@ const init = (element: HTMLElement|null) => {
         source.src = URL.createObjectURL(videoFile);
         video.load();
         video.play();
+        widthField.value = video.videoWidth.toString();
     })
 
     const playButton = document.createElement("button");
@@ -118,6 +134,50 @@ const init = (element: HTMLElement|null) => {
     element.appendChild(video);
     element.appendChild(input);
     element.appendChild(playButton);
+    const countField = document.createElement('input');
+    countField.type = 'number'
+    countField.min = '1'
+    countField.max = '80'
+    countField.style.width = '150px'
+    countField.placeholder = 'extract 10 frames'
+    countField.value = '10';
+    element.appendChild(countField);
+
+    const extractButton = document.createElement('button');
+    extractButton.innerText = 'Extract frames';
+    const output = document.createElement('div');//todo change to canvas (player with fps previewing) - in another class
+    output.style.overflow = 'auto';
+    output.style.maxHeight = 'calc(50vh - 100px)'
+    extractButton.addEventListener('click', ()=>{
+        //@ts-ignore
+        const startTime = parseFloat(rangeSlider.get()[0])
+        //@ts-ignore
+        const endTime = parseFloat(rangeSlider.get()[2])
+        videoFrames({
+            url: source.src,
+            count: parseInt(countField.value),
+            width: parseInt(widthField.value) || video.videoWidth, //height is auto
+            startTime,
+            endTime,
+            type: 'image/webp',
+            onLoad: () => {
+                output.innerHTML = 'video loaded'
+            },
+            //@ts-ignore
+            onProgress: (n, N) => {
+                output.innerHTML = `${n} of ${N} frames extracted`
+            }
+            //@ts-ignore
+        }).then((frames) => {
+            output.innerHTML = ''
+            //@ts-ignore
+            frames.forEach(f => {
+                output.innerHTML += `<img src="${f.image}">`
+            })
+        })
+    })
+    element.appendChild(extractButton);
+    element.appendChild(output);
 
 }
 export { hello, init };
