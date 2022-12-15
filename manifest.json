@@ -3,5 +3,19 @@
     "file": "main.cjs",
     "src": "src/main.ts",
     "isEntry": true
+  },
+  "src/demo.ts": {
+    "file": "main2.cjs",
+    "src": "src/demo.ts",
+    "isEntry": true
+  },
+  "src/style.css": {
+    "file": "main3.cjs",
+    "src": "src/style.css",
+    "isEntry": true
+  },
+  "style.css": {
+    "file": "style.css",
+    "src": "style.css"
   }
 }
