@@ -1,5 +1,7 @@
 //@ts-ignore
 import videoFrames from 'video-frames';
+import noUiSlider from "nouislider"//todo change for https://www.cssscript.com/custom-range-slider-input/ ??
+import "nouislider/dist/nouislider.min.css" //it can handle ext dependencies too
 import {storeSetValue,storeGetValue} from "./localStorage"
 import {
     createElementWithChildren,
@@ -18,7 +20,78 @@ class FramePreviewer {
     countField: HTMLInputElement
     element: HTMLElement
 
-    constructor(startTime: number, endTime: number, frameCount: number, speed: number, video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, attachToElement: HTMLElement) {
+    constructor( frameCount: number, speed: number, video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, attachToElement: HTMLElement) {
+        const slider = document.createElement('div');
+
+        const startTime = storeGetValue("startPos", 0)
+        const curTime = storeGetValue("curPos", 40)
+        const endTime = storeGetValue("endPos", 100)
+        const min = storeGetValue("min", 0)
+        const max = storeGetValue("max", 100)
+        const rangeSlider = noUiSlider.create(slider, {
+            start: [startTime,curTime, endTime],
+            connect: true,
+            range: {
+                min,
+                max
+            }
+        });
+
+        var lastTime = -1;
+        function draw() {
+            var time = video.currentTime;
+            if (time !== lastTime) {
+                // console.log('time: ' + time);
+                //todo: do your rendering here
+                lastTime = time;
+                rangeSlider.setHandle(1, time)
+                //@ts-ignore
+                const startPos = parseFloat(rangeSlider.get()[0])
+                //@ts-ignore
+                const endPos = parseFloat(rangeSlider.get()[2])
+                if(time > endPos){
+                    video.currentTime = startPos;
+                }
+            }
+            //wait approximately 16ms and run again
+            requestAnimationFrame(draw);
+        }
+        draw();
+        /////////// end time update
+        rangeSlider.on('start', (e)=>{
+            console.log("start", e)
+            video.pause()
+        })
+        rangeSlider.on('end', (e)=>{
+            //@ts-ignore
+            const startPos = parseFloat(e[0])
+            storeSetValue("startPos", startPos)
+            this.setStartTime(startPos)
+            //@ts-ignore
+            const curPos = parseFloat(e[1])
+            storeSetValue("curPos", curPos)
+            //@ts-ignore
+            const endPos = parseFloat(e[2])
+            storeSetValue("endPos", endPos)
+            this.setEndTime(endPos)
+            console.log("end", e)
+            video.currentTime = curPos;
+            video.play()
+        })
+        video.addEventListener('loadeddata', e=>{
+            console.log("LOADED VIDEO", e, rangeSlider)
+            const min = storeGetValue("min", 0);
+            const max = storeGetValue("max", video.duration);
+            const endPos = storeGetValue("endPos", video.duration);
+            rangeSlider.updateOptions({
+                range: {
+                    min,
+                    max
+                }
+            }, true);
+            rangeSlider.setHandle(2, endPos);
+        })
+
         this.element = document.createElement('div');
         this.canvasOutput = document.createElement('canvas');
         this.frameCount = frameCount;
@@ -38,7 +111,7 @@ class FramePreviewer {
         // this.element.style.height = `calc(${video.offsetHeight}px + 80px)`
 
         this.widthField.valueAsNumber = framePreviewerVideoWidth;
-            this.widthField.addEventListener('change', ()=>{
+        this.widthField.addEventListener('change', ()=>{
             const vidWidth = this.widthField.valueAsNumber;
             storeSetValue('framePreviewerVideoWidth', vidWidth)
             console.log(vidWidth)
@@ -59,17 +132,6 @@ class FramePreviewer {
             this.canvasOutput.height = video.offsetHeight;
             console.log({offsetWidht: video.offsetWidth, offsetHeight: video.offsetHeight,videoWidth: video.videoWidth, width: video.width, videoHeight: video.videoHeight, height: video.height,vidWidth})
         });
-
-        this.countField = document.createElement('input');
-        this.countField.type = 'number'
-        this.countField.min = '1'
-        this.countField.max = '80'
-        this.countField.placeholder = 'extract 10 frames'
-        this.countField.valueAsNumber = storeGetValue('framePreviewerFrameCount', 10);
-        this.countField.addEventListener('change', ()=>{
-            storeSetValue('framePreviewerFrameCount', this.countField.valueAsNumber)
-        })
-
 
         const output = document.createElement('div');//todo change to canvas (player with fps previewing) - in another class
         output.style.overflow = 'auto';
@@ -138,6 +200,17 @@ class FramePreviewer {
         downloadButton.innerText = 'Export frame strip';
         downloadButton.addEventListener('click', downloadExtractedFrames);
 
+        this.countField = document.createElement('input');
+        this.countField.type = 'number'
+        this.countField.min = '1'
+        this.countField.max = '80'
+        this.countField.placeholder = 'extract 10 frames'
+        this.countField.valueAsNumber = storeGetValue('framePreviewerFrameCount', 10);
+        this.countField.addEventListener('change', ()=>{
+            storeSetValue('framePreviewerFrameCount', this.countField.valueAsNumber)
+            extractFrames();
+        })
+
         //append to elements
         this.element.appendChild(this.canvasOutput);
         this.element.appendChild(createElementWithChildren([
@@ -152,8 +225,13 @@ class FramePreviewer {
             const videoWidthIndicator = document.getElementById("videoWidthIndicator")
             console.log(videoWidthIndicator, {video})
             if(videoWidthIndicator) videoWidthIndicator.innerText = `/${video.videoWidth.toString()}`;
+
+            extractFrames();
         })
+        attachToElement.appendChild(slider)
+
         attachToElement.appendChild(this.element)
+
 
         this.element.className = "video-frame-previewer-extractor"
         this.widthField.className = "video-frame-previewer-extractor-width"
