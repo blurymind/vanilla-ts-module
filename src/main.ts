@@ -1,9 +1,10 @@
 //@ts-ignore
 import videoFrames from 'video-frames';
 import noUiSlider from "nouislider"//todo change for https://www.cssscript.com/custom-range-slider-input/ ??
-
 import "nouislider/dist/nouislider.min.css" //it can handle ext dependencies too
-
+import {storeSetValue,storeGetValue} from "./localStorage"
+import { FramePreviewer } from "./framePreviewer";
+import {attachStyleToSheet} from "./htmlHelpers";
 
 // main.ts
 const hello = (name: string) => {
@@ -13,37 +14,30 @@ const hello = (name: string) => {
 // todo move under a class so we can instantiate it
 const init = (element: HTMLElement|null) => {
     if(!element) return;
-    var slider = document.createElement('div');
+    const slider = document.createElement('div');
+
+    const startTime = storeGetValue("startPos", 0)
+    const curTime = storeGetValue("curPos", 40)
+    const endTime = storeGetValue("endPos", 100)
+    const min = storeGetValue("min", 0)
+    const max = storeGetValue("max", 100)
     const rangeSlider = noUiSlider.create(slider, {
-        start: [0,40, 100],
+        start: [startTime,curTime, endTime],
         connect: true,
         range: {
-            'min': 0,
-            'max': 100
+            min,
+            max
         }
     });
     element.appendChild(slider)
 
+    const videoSrc = storeGetValue("videoSrc","https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f1/Cat_jumping_backwards.webm/Cat_jumping_backwards.webm.720p.vp9.webm") ?? ""
     const video = document.createElement('video')
     video.style.maxHeight = "50vh";
-
-    const widthField = document.createElement('input');
-    widthField.type = 'number'
-    widthField.title = 'Video width (height is automatic)'
-    widthField.min = '8'
-    widthField.max = '1080'
-    widthField.style.width = '150px'
-    widthField.placeholder = '0'
-    widthField.value = '0';
-    widthField.addEventListener('change', ()=>{
-        const vidWidth = parseInt(widthField.value);
-        console.log(vidWidth)
-        //@ts-ignore
-        video.style.width = vidWidth === 0 ? undefined : `${vidWidth}px`;
-    })
-    element.appendChild(widthField)
+    video.muted = true;
 
     const source = document.createElement('source')
+    source.src = videoSrc;
     const input = document.createElement('input');
     input.type = "file"
     input.accept = "video/*"
@@ -79,6 +73,12 @@ const init = (element: HTMLElement|null) => {
         requestAnimationFrame(draw);
     }
     draw();
+
+    const framePreviewer = new FramePreviewer(
+        //@ts-ignore
+        startTime, endTime,
+        4, 12, video, source, input, element);
+    console.log(framePreviewer)
     /////////// end time update
     rangeSlider.on('start', (e)=>{
         console.log("start", e)
@@ -87,99 +87,43 @@ const init = (element: HTMLElement|null) => {
     rangeSlider.on('end', (e)=>{
         //@ts-ignore
         const startPos = parseFloat(e[0])
+        storeSetValue("startPos", startPos)
+        framePreviewer.setStartTime(startPos)
         //@ts-ignore
         const curPos = parseFloat(e[1])
+        storeSetValue("curPos", curPos)
         //@ts-ignore
         const endPos = parseFloat(e[2])
+        storeSetValue("endPos", endPos)
+        framePreviewer.setEndTime(endPos)
         console.log("end", e)
         video.currentTime = curPos;
         video.play()
     })
 
-    const output = document.createElement('div');//todo change to canvas (player with fps previewing) - in another class
-    const canvasOutput = document.createElement('canvas');//todo change to canvas (player with fps previewing) - in another class
-    output.style.overflow = 'auto';
-    output.style.maxHeight = 'calc(50vh - 100px)';
-    const downloadExtractedFrames = () => {
-        console.log(canvasOutput.toDataURL());
-        const link = document.createElement('a');
-        //@ts-ignore
-        link.download = `${input.files[0].name}-download.png`;//todo change to video name
-        link.href = canvasOutput.toDataURL();
-        link.click();
-        //@ts-ignore
-        link.delete;
-    }
-    const extractFrames = () =>{
-        //@ts-ignore
-        const startTime = parseFloat(rangeSlider.get()[0])
-        //@ts-ignore
-        const endTime = parseFloat(rangeSlider.get()[2])
-
-        const frameWidth = parseInt(widthField.value) || video.videoWidth;
-        const count = parseInt(countField.value)
-        canvasOutput.width = frameWidth * count;
-        canvasOutput.height =  video.videoHeight;
-        const ctx = canvasOutput.getContext('2d');
-        console.log({canvasW: frameWidth * count, canvH: video.videoHeight})
-
-        videoFrames({
-            url: source.src,
-            count,
-            width: frameWidth, //height is auto
-            startTime,
-            endTime,
-            type: 'image/webp',
-            onLoad: () => {
-                output.innerHTML = 'video loaded'
-            },
-            //@ts-ignore
-            onProgress: (n, N) => {
-                output.innerHTML = `${n} of ${N} frames extracted`
-            }
-            //@ts-ignore
-        }).then((frames) => {
-            output.innerHTML = ''
-            //@ts-ignore
-            frames.forEach((f,i) => {
-                // output.innerHTML += `<img src="${f.image}">`
-                if(ctx){
-                    const img = new Image();   // Create new img element
-                    img.addEventListener("load", function() {
-                        ctx.drawImage(img,i * img.width,0);
-
-                        if(i === frames.length - 1){
-                            setTimeout(()=>{
-                                downloadExtractedFrames()
-                            }, 200)
-                        }
-                    }, false);
-                    img.src = f.image;
-                }
-            })
-        })
-    }
-
     video.addEventListener('loadeddata', e=>{
         console.log("LOADED VIDEO", e, rangeSlider)
+        const min = storeGetValue("min", 0);
+        const max = storeGetValue("max", video.duration);
+        const endPos = storeGetValue("endPos", video.duration);
         rangeSlider.updateOptions({
             range: {
-                'min': 0,
-                'max': video.duration
+                min,
+                max
             }
         }, true);
-        rangeSlider.setHandle(2, video.duration);
-        // extractFrames();
+        rangeSlider.setHandle(2, endPos);
     })
+
     input.addEventListener('change', e => {
         console.log("Load video", e, source, source.parentNode)
         //@ts-ignore
         const videoFile = e.target.files[0];
         console.log({videoFile})
         source.src = URL.createObjectURL(videoFile);
+        // storeSetValue("videoSrc", URL.createObjectURL(videoFile))// todo this wont work with a blob
         video.load();
         video.play();
-        widthField.value = video.videoWidth.toString();
     })
 
     const playButton = document.createElement("button");
@@ -191,31 +135,12 @@ const init = (element: HTMLElement|null) => {
     element.appendChild(video);
     element.appendChild(input);
     element.appendChild(playButton);
-    const countField = document.createElement('input');
-    countField.type = 'number'
-    countField.min = '1'
-    countField.max = '80'
-    countField.style.width = '150px'
-    countField.placeholder = 'extract 10 frames'
-    countField.value = '10';
-    element.appendChild(countField);
-
-    const extractButton = document.createElement('button');
-    extractButton.innerText = 'Extract frames';
-
-    extractButton.addEventListener('click', extractFrames);
-    canvasOutput.addEventListener('click', downloadExtractedFrames)
-    element.appendChild(extractButton);
-    // element.appendChild(output);
-    element.appendChild(canvasOutput);
 
     var styles = `
      .noUi-handle {
         opacity: 0.7;
      }
     `
-    var styleSheet = document.createElement("style")
-    styleSheet.innerText = styles
-    document.head.appendChild(styleSheet);
+    attachStyleToSheet(styles);
 }
 export { hello, init };
