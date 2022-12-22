@@ -24,4 +24,45 @@ const attachStyleToSheet = (styles: string): void => {
     document.head.appendChild(styleSheet);
 }
 
-export {createElementWithChildren, createElementWithLabel, attachStyleToSheet, createElementWithInnerText}
+// This is a bit inspired by how flutter does dom, although pretty primitive
+interface DomObject {
+    type?: string;
+    children?: Array<DomObject>; //children is a list of dom components - function calls itself in that case
+    className?: string;
+    css?: string;
+    innerText?: string;
+    label?: string;
+    element?: HTMLElement;// just pass an element instead of creating one
+    events?: {[eventKey: string]: (p?: any)=>void };
+    style?: { [styleKey: string]: string|null }
+}
+const createDomTreeFromObject = (data: DomObject, parent: HTMLElement) => {
+    let element = data.element ?? document.createElement(data.type ?? 'div');
+
+    if(data.innerText) {
+        element.innerText = data.innerText;
+    }
+    if(data.label) {
+        element = createElementWithLabel(data.label, element);
+    }
+    if(data.className) element.className = data.className;
+    if(data.events){
+      Object.entries(data.events).forEach(([eventKey,callback])=>{
+          element.addEventListener(eventKey, callback);
+      })
+    }
+    if(data.style){
+        Object.entries(data.style).forEach(([styleKey,style])=>{
+            element.style.setProperty(styleKey, style);
+        })
+    }
+
+    if(data.children){
+        data.children.forEach(child=>{
+            createDomTreeFromObject(child, element)
+        })
+    }
+    parent.appendChild(element);
+}
+
+export {createElementWithChildren, createElementWithLabel, attachStyleToSheet, createElementWithInnerText, createDomTreeFromObject}

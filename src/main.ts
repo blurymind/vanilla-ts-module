@@ -2,6 +2,7 @@
 import videoFrames from 'video-frames';
 import {storeSetValue,storeGetValue} from "./localStorage"
 import { FramePreviewer } from "./framePreviewer";
+import {FramePlayer} from "./framePlayer";
 import {attachStyleToSheet} from "./htmlHelpers";
 
 // main.ts
@@ -18,52 +19,17 @@ const init = (element: HTMLElement|null) => {
     const video = document.createElement('video')
     video.style.maxHeight = "50vh";
     video.muted = true;
-
     const source = document.createElement('source')
     source.src = videoSrc;
     const input = document.createElement('input');
     input.type = "file"
     input.accept = "video/*"
 
-    function togglePlay() {
-        if (video.paused || video.ended) {
-            video.play();
-        } else {
-            video.pause();
-        }
-    }
-
     const framePreviewer = new FramePreviewer(
         4, 12, video, source, input, element);
-    console.log(framePreviewer)
 
+    const framePlayer = new FramePlayer(video, source, input, element);
 
-    input.addEventListener('change', e => {
-        console.log("Load video", e, source, source.parentNode)
-        //@ts-ignore
-        const videoFile = e.target.files[0];
-        console.log({videoFile})
-        source.src = URL.createObjectURL(videoFile);
-        // storeSetValue("videoSrc", URL.createObjectURL(videoFile))// todo this wont work with a blob
-        video.load();
-        video.play();
-    })
-
-    const playButton = document.createElement("button");
-    playButton.innerText = "play/pause"
-    playButton.addEventListener('click', togglePlay);
-    video.addEventListener('click', togglePlay);
-
-    video.appendChild(source)
-    element.appendChild(video);
-    element.appendChild(input);
-    element.appendChild(playButton);
-
-    var styles = `
-     .noUi-handle {
-        opacity: 0.7;
-     }
-    `
-    attachStyleToSheet(styles);
+    console.log(framePreviewer, framePlayer)
 }
 export { hello, init };

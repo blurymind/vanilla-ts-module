@@ -20,7 +20,7 @@ class FramePreviewer {
     countField: HTMLInputElement
     element: HTMLElement
 
-    constructor( frameCount: number, speed: number, video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, attachToElement: HTMLElement) {
+    constructor(frameCount: number, speed: number, video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, attachToElement: HTMLElement) {
         const slider = document.createElement('div');
 
         const startTime = storeGetValue("startPos", 0)
@@ -279,6 +279,10 @@ class FramePreviewer {
          .video-frame-previewer-extractor-button {
             left: 50%;
             max-height: 60px;
+         }
+         
+         .noUi-handle {
+            opacity: 0.7;
          }
         `
         attachStyleToSheet(styles);
