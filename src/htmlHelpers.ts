@@ -35,8 +35,9 @@ interface DomObject {
     element?: HTMLElement;// just pass an element instead of creating one
     events?: {[eventKey: string]: (p?: any)=>void };
     style?: { [styleKey: string]: string|null }
+    id?: string
 }
-const createDomTreeFromObject = (data: DomObject, parent: HTMLElement) => {
+const createDomTreeFromObject = (data: DomObject, parent: HTMLElement, style: string = "") => {
     let element = data.element ?? document.createElement(data.type ?? 'div');
 
     if(data.innerText) {
@@ -56,13 +57,18 @@ const createDomTreeFromObject = (data: DomObject, parent: HTMLElement) => {
             element.style.setProperty(styleKey, style);
         })
     }
-
+    if(data.id) element.id = data.id;
     if(data.children){
         data.children.forEach(child=>{
             createDomTreeFromObject(child, element)
         })
     }
     parent.appendChild(element);
+
+    if(style){
+        attachStyleToSheet(style);
+    }
+
 }
 
 export {createElementWithChildren, createElementWithLabel, attachStyleToSheet, createElementWithInnerText, createDomTreeFromObject}
