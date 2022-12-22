@@ -7,7 +7,7 @@ import {
     createElementWithChildren,
     createElementWithLabel,
     attachStyleToSheet,
-    createElementWithInnerText
+    createElementWithInnerText, createDomTreeFromObject
 } from "./htmlHelpers"
 
 class FramePreviewer {
@@ -211,6 +211,9 @@ class FramePreviewer {
             extractFrames();
         })
 
+        //Todo convert to using the new createDomTreeFromObject
+        // todo add play/pause, frame forward and backward, set start and set end button
+
         //append to elements
         this.element.appendChild(this.canvasOutput);
         this.element.appendChild(createElementWithChildren([
@@ -258,6 +261,7 @@ class FramePreviewer {
             padding-right: 7px;
             border-radius: 12px;
             margin: 4px;
+            max-height: 60px;
          }
          .video-frame-previewer-controls > .input-with-label {
             display: flex;
