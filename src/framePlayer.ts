@@ -6,15 +6,21 @@ class FramePlayer {
     video: HTMLVideoElement
     source: HTMLSourceElement
     input: HTMLInputElement
+    onFrameRectChange?: (p: any) => void;
+    isMouseDown: boolean
+    clicks: any
 
-    constructor(video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, element: HTMLElement) {
+    constructor(video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, element: HTMLElement, onFrameRectChange: (p: any) => void|undefined = undefined) {
         this.video = video;
         this.source = source;
         this.input = input;
         this.input.className = "frame-player-input";
+        this.isMouseDown = false;
+        this.clicks = { 0: {x: 0, y:0}, 1: {x:0, y:0}};
+        this.onFrameRectChange = onFrameRectChange;
 
         console.log({video}, this.video)
-        this.input.addEventListener('change', e => {
+        const onInputChange = (e: any) => {
             console.log("Load video", e, source, source.parentNode)
             //@ts-ignore
             const videoFile = e.target.files[0];
@@ -23,7 +29,7 @@ class FramePlayer {
             // storeSetValue("videoSrc", URL.createObjectURL(videoFile))// todo this wont work with a blob
             this.video.load();
             this.video.play();
-        })
+        }
 
         const togglePlay =(e: any)=> {
             console.log(this.video)
@@ -46,14 +52,21 @@ class FramePlayer {
         // Draw video playback to canvas
         const canvasEl = document.createElement('canvas');
         const ctx = canvasEl?.getContext('2d');
-        function updateCanvas() {
+
+        const updateCanvas =()=> {
             canvasEl.width = video.offsetWidth;
             canvasEl.height = video.offsetHeight;
             ctx?.drawImage(video, 0, 0, canvasEl.width, canvasEl.height);//todo need to toggle between this and frames
+            this.drawRectangle(ctx);
             window.requestAnimationFrame(updateCanvas);
         }
         requestAnimationFrame(updateCanvas);
 
+        const onUpdateFrameRect = () => {
+            if(this.onFrameRectChange) {
+                this.onFrameRectChange(this.clicks)
+            }
+        }
         createDomTreeFromObject({
             type: "div",
             className: "frame-player",
@@ -68,9 +81,36 @@ class FramePlayer {
                                 children: [{element: this.source}],
                                 style: {visibility: "hidden", position: "absolute"}
                             },
-                            {element: canvasEl, events: {click: togglePlay, mousedown:console.log, mouseup:console.log}}
+                            {element: canvasEl, events: {click: togglePlay,
+                                    pointerdown: (e)=> {
+                                        this.clicks[0] = {
+                                            x: e.offsetX,
+                                            y: e.offsetY
+                                        };
+                                        this.isMouseDown = true;
+                                    },
+                                    pointermove: (e) =>{
+                                        if (this.isMouseDown) {
+                                            this.clicks[1] = {
+                                                x: e.offsetX,
+                                                y: e.offsetY
+                                            };
+                                        }
+                                    },
+                                    pointerup: (e) => {
+                                        this.isMouseDown = false;
+                                        this.clicks[1] = {
+                                            x: e.offsetX,
+                                            y: e.offsetY
+                                        };
+                                        onUpdateFrameRect()
+                                    },
+                                    pointerleave:  () =>{
+                                        this.isMouseDown = false;
+                                    }
+                            }}
                         ]},
-                {element: this.input}
+                {element: this.input, events: {change: onInputChange}}
             ]
         }, element, `
             .frame-player {
@@ -91,13 +131,23 @@ class FramePlayer {
         `);
     }
 
-    public togglePlay() {//todo dont work
+    togglePlay() {//todo dont work
         console.log(this.video)
         if (this.video.paused || this.video.ended) {
             this.video.play();
         } else {
             this.video.pause();
         }
+    }
+    drawRectangle = (ctx: CanvasRenderingContext2D|null) =>{
+        if(!ctx) return;
+        ctx.beginPath();
+        ctx.rect(this.clicks[0].x, this.clicks[0].y, this.clicks[1].x-this.clicks[0].x, this.clicks[1].y-this.clicks[0].y);
+        ctx.fillStyle = 'rgba(100,100,100,0.5)';
+        ctx.fill();
+        ctx.strokeStyle = "#df4b26";
+        ctx.lineWidth = 1;
+        ctx.stroke();
     }
 }
 

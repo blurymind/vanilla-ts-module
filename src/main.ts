@@ -28,7 +28,11 @@ const init = (element: HTMLElement|null) => {
     const framePreviewer = new FramePreviewer(
         4, 12, video, source, input, element);
 
-    const framePlayer = new FramePlayer(video, source, input, element);
+    const onFrameRectChange = (e: any) => { //todo should it be event?
+        console.log("RECT::", e)
+    }
+    const framePlayer = new FramePlayer(video, source, input, element, onFrameRectChange);
+
 
     console.log(framePreviewer, framePlayer)
 }

@@ -38,7 +38,7 @@ interface DomObject {
     attributes?: { [styleKey: string]: any };
     id?: string
 }
-const createDomTreeFromObject = (data: DomObject, parent: HTMLElement, style: string = "") => {
+const createDomTreeFromObject = (data: DomObject, parent: HTMLElement, style: string = ""): HTMLElement => {
     let element = data.element ?? document.createElement(data.type ?? 'div');
 
     if(data.innerText) {
