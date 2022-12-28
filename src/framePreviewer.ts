@@ -150,6 +150,8 @@ class FramePreviewer {
         }
 
         const extractFrames = () =>{
+            const videoFramePlayerRect = storeGetValue("videoFramePlayerRect",{ 0: {x: 0, y:0}, 1: {x:0, y:0}, skip: true});
+            console.log({ videoFramePlayerRect });
             const frameWidth = this.widthField.valueAsNumber || video.videoWidth;
             const count = this.countField.valueAsNumber;
             this.canvasOutput.width = frameWidth * count;
@@ -174,19 +176,38 @@ class FramePreviewer {
                 //@ts-ignore
             }).then((frames) => {
                 output.innerHTML = ''
+
+                const imageWidth = videoFramePlayerRect[1].x-videoFramePlayerRect[0].x
+                const imageHeight = videoFramePlayerRect[1].y-videoFramePlayerRect[0].y
+                if(!videoFramePlayerRect.skip){
+                    this.canvasOutput.width = imageWidth * frames.length;
+                    this.canvasOutput.height = imageHeight;
+                }
+
                 //@ts-ignore
                 frames.forEach((f,i) => {
                     // output.innerHTML += `<img src="${f.image}">`
                     if(ctx){
                         const img = new Image();   // Create new img element
                         img.addEventListener("load", function() {
-                            ctx.drawImage(img,i * img.width,0);
+                            if(videoFramePlayerRect.skip){
+                                ctx.drawImage(img,i * img.width,0);
+                                return;
+                            }
 
-                            // if(i === frames.length - 1){
-                            //     setTimeout(()=>{
-                            //         downloadExtractedFrames()
-                            //     }, 200)
-                            // }
+                            const startCropX = videoFramePlayerRect[0].x + (i * imageWidth)
+                            const startCropY = videoFramePlayerRect[0].y
+
+                            console.log({imageWidth, imageHeight, startCropX, startCropY})
+                            ctx.drawImage(img,
+                                // crop start
+                                videoFramePlayerRect[0].x, videoFramePlayerRect[0].y,
+                                // size of image (same between frames)
+                                imageWidth,imageHeight,
+                                startCropX, 0,
+                                // size of image (same between frames)
+                                imageWidth,imageHeight,
+                                );
                         }, false);
                         img.src = f.image;
                     }
@@ -229,6 +250,10 @@ class FramePreviewer {
             console.log(videoWidthIndicator, {video})
             if(videoWidthIndicator) videoWidthIndicator.innerText = `/${video.videoWidth.toString()}`;
 
+            extractFrames();
+        })
+        video.addEventListener("videoframerectchanged", e=>{
+            console.log("frame rect changed!", e)
             extractFrames();
         })
         attachToElement.appendChild(slider)

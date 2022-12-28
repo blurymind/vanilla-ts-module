@@ -1,4 +1,4 @@
-import {createDomTreeFromObject} from "./htmlHelpers"
+import {createDomTreeFromObject, swapObjectValues} from "./htmlHelpers"
 import {storeGetValue, storeSetValue} from "./localStorage";
 
 //Todo this class plays original video, preview frames w fps and lets you crop video (talks back to framepreviewer
@@ -16,7 +16,7 @@ class FramePlayer {
         this.input = input;
         this.input.className = "frame-player-input";
         this.isMouseDown = false;
-        this.clicks = { 0: {x: 0, y:0}, 1: {x:0, y:0}};
+        this.clicks = storeGetValue("videoFramePlayerRect",{ 0: {x: 0, y:0}, 1: {x:0, y:0}, skip: true});
         this.onFrameRectChange = onFrameRectChange;
 
         console.log({video}, this.video)
@@ -38,7 +38,7 @@ class FramePlayer {
             } else {
                 this.video.pause();
             }
-            e.target.innerText = this.video.paused ? "Play": "Pause";
+            e.target.innerText = this.video.paused ? "▶️": "⏸️";
         }
 
         const previewMode = storeGetValue("framePlayerPreviewMode", "source")//source or reduced
@@ -62,7 +62,19 @@ class FramePlayer {
         }
         requestAnimationFrame(updateCanvas);
 
+
         const onUpdateFrameRect = () => {
+            this.clicks.skip = JSON.stringify(this.clicks[0]) === JSON.stringify(this.clicks[1]);
+            if(this.clicks[0].x > this.clicks[1].x){
+                swapObjectValues(this.clicks, "0", "1");
+            }
+            storeSetValue("videoFramePlayerRect", this.clicks);
+            const frameRectChanged = new CustomEvent('videoframerectchanged', {
+                detail: {
+                    rect: this.clicks
+                }
+            });
+            this.video.dispatchEvent(frameRectChanged);
             if(this.onFrameRectChange) {
                 this.onFrameRectChange(this.clicks)
             }
@@ -71,8 +83,8 @@ class FramePlayer {
             type: "div",
             className: "frame-player",
             children: [
-                {type: "div", className: "frame-player-controls", children:[
-                        {type: "button", innerText: "play", events: {click: togglePlay}, id: "playButton"},
+                {type: "div", className: "frame-player-controls", id: "framePlayerControls", children:[
+                        {type: "button", innerText: "▶️", events: {click: togglePlay}, id: "playButton"},
                         {type: "button", innerText: previewMode, events: {click: toggleMode}, id: "modeButton"},
                     ]},
                 {type: "div", className: "video-area", children:
@@ -81,33 +93,36 @@ class FramePlayer {
                                 children: [{element: this.source}],
                                 style: {visibility: "hidden", position: "absolute"}
                             },
-                            {element: canvasEl, events: {click: togglePlay,
+                            {element: canvasEl, events: {
+                                    // click: togglePlay,
                                     pointerdown: (e)=> {
                                         this.clicks[0] = {
-                                            x: e.offsetX,
-                                            y: e.offsetY
+                                            x: Math.floor(e.offsetX),
+                                            y: Math.floor(e.offsetY)
                                         };
                                         this.isMouseDown = true;
+
+                                        //@ts-ignore
+                                        document.getElementById("framePlayerControls").style.visibility = "hidden"
                                     },
                                     pointermove: (e) =>{
                                         if (this.isMouseDown) {
                                             this.clicks[1] = {
-                                                x: e.offsetX,
-                                                y: e.offsetY
+                                                x: Math.floor(e.offsetX),
+                                                y: Math.floor(e.offsetY)
                                             };
                                         }
                                     },
                                     pointerup: (e) => {
                                         this.isMouseDown = false;
                                         this.clicks[1] = {
-                                            x: e.offsetX,
-                                            y: e.offsetY
+                                            x: Math.floor(e.offsetX),
+                                            y: Math.floor(e.offsetY)
                                         };
+                                        //@ts-ignore
+                                        document.getElementById("framePlayerControls").style.visibility = "visible"
                                         onUpdateFrameRect()
                                     },
-                                    pointerleave:  () =>{
-                                        this.isMouseDown = false;
-                                    }
                             }}
                         ]},
                 {element: this.input, events: {change: onInputChange}}

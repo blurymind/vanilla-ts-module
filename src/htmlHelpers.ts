@@ -77,4 +77,8 @@ const createDomTreeFromObject = (data: DomObject, parent: HTMLElement, style: st
     return element;
 }
 
-export {createElementWithChildren, createElementWithLabel, attachStyleToSheet, createElementWithInnerText, createDomTreeFromObject}
+function swapObjectValues (obj: any, key1: string, key2: string) {
+    [obj[key1], obj[key2]] = [obj[key2], obj[key1]];
+}
+
+export {createElementWithChildren, createElementWithLabel, attachStyleToSheet, createElementWithInnerText, createDomTreeFromObject, swapObjectValues}
