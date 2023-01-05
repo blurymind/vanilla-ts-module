@@ -24,14 +24,14 @@ const init = (element: HTMLElement|null) => {
     const input = document.createElement('input');
     input.type = "file"
     input.accept = "video/*"
-
+const canvasOutput = document.createElement('canvas');
     const framePreviewer = new FramePreviewer(
-        4, 12, video, source, input, element);
+        4, 12, video, source, input, canvasOutput, element);
 
     const onFrameRectChange = (e: any) => { //todo should it be event?
         console.log("RECT::", e)
     }
-    const framePlayer = new FramePlayer(video, source, input, element, onFrameRectChange);
+    const framePlayer = new FramePlayer(video, source, input, canvasOutput, element, onFrameRectChange);
 
 
     console.log(framePreviewer, framePlayer)

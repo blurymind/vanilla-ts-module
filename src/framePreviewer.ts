@@ -20,7 +20,7 @@ class FramePreviewer {
     countField: HTMLInputElement
     element: HTMLElement
 
-    constructor(frameCount: number, speed: number, video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, attachToElement: HTMLElement) {
+    constructor(frameCount: number, speed: number, video: HTMLVideoElement, source: HTMLSourceElement, input: HTMLInputElement, canvasOutput: HTMLCanvasElement, attachToElement: HTMLElement) {
         const slider = document.createElement('div');
 
         const startTime = storeGetValue("startPos", 0)
@@ -93,7 +93,7 @@ class FramePreviewer {
         })
 
         this.element = document.createElement('div');
-        this.canvasOutput = document.createElement('canvas');
+        this.canvasOutput = canvasOutput;
         this.frameCount = frameCount;
         this.speed = speed ?? 10;
         this.startTime = startTime;
@@ -177,8 +177,8 @@ class FramePreviewer {
             }).then((frames) => {
                 output.innerHTML = ''
 
-                const imageWidth = videoFramePlayerRect[1].x-videoFramePlayerRect[0].x
-                const imageHeight = videoFramePlayerRect[1].y-videoFramePlayerRect[0].y
+                const imageWidth = videoFramePlayerRect.width
+                const imageHeight = videoFramePlayerRect.height
                 if(!videoFramePlayerRect.skip){
                     this.canvasOutput.width = imageWidth * frames.length;
                     this.canvasOutput.height = imageHeight;
@@ -249,7 +249,8 @@ class FramePreviewer {
             const videoWidthIndicator = document.getElementById("videoWidthIndicator")
             console.log(videoWidthIndicator, {video})
             if(videoWidthIndicator) videoWidthIndicator.innerText = `/${video.videoWidth.toString()}`;
-
+            video.currentTime = startTime;
+            video.play()
             extractFrames();
         })
         video.addEventListener("videoframerectchanged", e=>{

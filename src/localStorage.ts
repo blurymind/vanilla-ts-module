@@ -16,7 +16,7 @@ const storeSetValue = (key: string, value: any, spreadValue = true) => {
 }
 
 const storeGetValue = (storeId: string, failValue:any,valueKey = ""): any =>{
-    console.log("get store val", {store: getStore()})
+    // console.log("get store val", {store: getStore()})
     if(valueKey == "") return getStore()[storeId]?.value ?? failValue;
     return getStore()[storeId]?.value[valueKey] ?? failValue;
 }
